@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import GUI from "lil-gui";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
@@ -10,6 +11,7 @@ export class GameState {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
+  private gui = new GUI();
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -22,8 +24,7 @@ export class GameState {
       0.1,
       100
     );
-    this.camera.position.z = 1.6;
-    this.camera.position.y = 1.2;
+    this.camera.position.set(4, 2, 5);
 
     // Setup renderer
     this.renderer = new THREE.WebGLRenderer({ canvas });
@@ -42,18 +43,10 @@ export class GameState {
     this.controls.enableDamping = true;
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-    this.scene.add(ambientLight);
+    this.addLights();
 
-    const directLight = new THREE.DirectionalLight();
-    this.scene.add(directLight);
-
-    // Add box
-    const box = this.gameLoader.modelLoader.get("box");
-    if (box) {
-      addGui(box, "box");
-      this.scene.add(box);
-    }
+    // Add scene objects
+    this.addObjects();
 
     // Start game
     this.update();
@@ -72,6 +65,47 @@ export class GameState {
 
     this.camera.updateProjectionMatrix();
   };
+
+  private addObjects() {
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 32, 32),
+      new THREE.MeshStandardMaterial({ roughness: 0.7 })
+    );
+    sphere.position.y = 1;
+    this.scene.add(sphere);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      new THREE.MeshStandardMaterial({ color: "#a9c388" })
+    );
+    floor.rotation.x = -Math.PI * 0.5;
+    floor.position.y = 0;
+    this.scene.add(floor);
+  }
+
+  private addLights() {
+    const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
+    this.gui
+      .add(ambientLight, "intensity")
+      .min(0)
+      .max(1)
+      .step(0.001)
+      .name("ambient intensity");
+    this.scene.add(ambientLight);
+
+    const moonLight = new THREE.DirectionalLight("#ffffff", 0.5);
+    moonLight.position.set(4, 5, -2);
+    this.gui
+      .add(moonLight, "intensity")
+      .min(0)
+      .max(1)
+      .step(0.001)
+      .name("directional intensity");
+    this.gui.add(moonLight.position, "x").min(-5).max(5).step(0.001);
+    this.gui.add(moonLight.position, "y").min(-5).max(5).step(0.001);
+    this.gui.add(moonLight.position, "z").min(-5).max(5).step(0.001);
+    this.scene.add(moonLight);
+  }
 
   private update = () => {
     requestAnimationFrame(this.update);
