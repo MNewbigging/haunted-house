@@ -77,5 +77,45 @@ export class ModelLoader {
 
       this.models.set("grave-deco", gltf.scene);
     });
+
+    const graveCrossUrl = new URL(
+      "/models/gravestoneCross.glb",
+      import.meta.url
+    ).href;
+    gltfLoader.load(graveCrossUrl, (gltf) => {
+      // Traverse the gltf scene
+      gltf.scene.traverse((child) => {
+        const node = child as THREE.Mesh;
+        if (node.isMesh) {
+          // Kenney assets need their metalness reducing to render correctly
+          const mat = node.material as THREE.MeshStandardMaterial;
+          mat.metalness = 0;
+
+          node.castShadow = true;
+        }
+      });
+
+      this.models.set("grave-cross", gltf.scene);
+    });
+
+    const graveRoundUrl = new URL(
+      "/models/gravestoneRound.glb",
+      import.meta.url
+    ).href;
+    gltfLoader.load(graveRoundUrl, (gltf) => {
+      // Traverse the gltf scene
+      gltf.scene.traverse((child) => {
+        const node = child as THREE.Mesh;
+        if (node.isMesh) {
+          // Kenney assets need their metalness reducing to render correctly
+          const mat = node.material as THREE.MeshStandardMaterial;
+          mat.metalness = 0;
+
+          node.castShadow = true;
+        }
+      });
+
+      this.models.set("grave-round", gltf.scene);
+    });
   }
 }

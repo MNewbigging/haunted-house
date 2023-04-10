@@ -186,12 +186,17 @@ export class GameState {
     if (graveDeco) {
       graveModels.push(graveDeco);
     }
+    const graveCross = modelLoader.get("grave-cross");
+    if (graveCross) {
+      graveModels.push(graveCross);
+    }
+    const graveRound = modelLoader.get("grave-round");
+    if (graveRound) {
+      graveModels.push(graveRound);
+    }
 
     const graves = new THREE.Group();
     this.scene.add(graves);
-
-    // const graveGeom = new THREE.BoxGeometry(0.6, 0.8, 0.2);
-    // const graveMat = new THREE.MeshStandardMaterial({ color: "#b2b6b1" });
 
     const graveCount = 50;
     for (let i = 0; i < graveCount; i++) {
@@ -206,12 +211,9 @@ export class GameState {
       const rnd = Math.floor(Math.random() * graveModels.length);
       const grave = graveModels[rnd].clone();
 
-      //const grave = new THREE.Mesh(graveGeom, graveMat);
       grave.position.set(x, -0.03, z);
       grave.rotation.y = (Math.random() - 0.5) * 0.4;
       grave.rotation.z = (Math.random() - 0.5) * 0.2;
-
-      grave.castShadow = true;
 
       graves.add(grave);
     }
