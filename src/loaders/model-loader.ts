@@ -38,8 +38,11 @@ export class ModelLoader {
   private loadModels() {
     const gltfLoader = new GLTFLoader(this.loadingManager);
 
-    const boxUrl = new URL("/box-small.glb", import.meta.url).href;
-    gltfLoader.load(boxUrl, (gltf) => {
+    const graveBevelUrl = new URL(
+      "/models/gravestoneBevel.glb",
+      import.meta.url
+    ).href;
+    gltfLoader.load(graveBevelUrl, (gltf) => {
       // Traverse the gltf scene
       gltf.scene.traverse((child) => {
         const node = child as THREE.Mesh;
@@ -47,10 +50,32 @@ export class ModelLoader {
           // Kenney assets need their metalness reducing to render correctly
           const mat = node.material as THREE.MeshStandardMaterial;
           mat.metalness = 0;
+
+          node.castShadow = true;
         }
       });
 
-      this.models.set("box", gltf.scene);
+      this.models.set("grave-bevel", gltf.scene);
+    });
+
+    const graveDecoUrl = new URL(
+      "/models/gravestoneDecorative.glb",
+      import.meta.url
+    ).href;
+    gltfLoader.load(graveDecoUrl, (gltf) => {
+      // Traverse the gltf scene
+      gltf.scene.traverse((child) => {
+        const node = child as THREE.Mesh;
+        if (node.isMesh) {
+          // Kenney assets need their metalness reducing to render correctly
+          const mat = node.material as THREE.MeshStandardMaterial;
+          mat.metalness = 0;
+
+          node.castShadow = true;
+        }
+      });
+
+      this.models.set("grave-deco", gltf.scene);
     });
   }
 }

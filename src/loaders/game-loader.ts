@@ -9,7 +9,7 @@ export class GameLoader {
   @observable loading = false;
 
   readonly modelLoader = new ModelLoader();
-  //readonly textureLoader = new TextureLoader();
+  readonly textureLoader = new TextureLoader();
 
   private onLoad?: () => void;
 
@@ -24,12 +24,12 @@ export class GameLoader {
     this.loading = true;
 
     this.modelLoader.load(this.onLoaderFinish);
-    //this.textureLoader.load(this.onLoaderFinish);
+    this.textureLoader.load(this.onLoaderFinish);
   }
 
   private onLoaderFinish = () => {
     // Simply check if all loaders have finished now
-    if (!this.modelLoader.loading) {
+    if (!this.modelLoader.loading && !this.textureLoader.loading) {
       this.loading = false;
       this.onLoad?.();
     }

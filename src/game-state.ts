@@ -6,11 +6,13 @@ import { GameLoader } from "./loaders/game-loader";
 import { addGui } from "./utils/utils";
 
 export class GameState {
+  private clock = new THREE.Clock();
   private scene = new THREE.Scene();
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
   private gui = new GUI();
+  private ghostLights: THREE.PointLight[] = [];
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -69,22 +71,48 @@ export class GameState {
   };
 
   private addObjects() {
+    const { textures } = this.gameLoader.textureLoader;
+
+    // Floor
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(20, 20),
-      new THREE.MeshStandardMaterial({ color: "#a9c388" })
+      new THREE.MeshStandardMaterial({
+        map: textures.get("grass-color"),
+        aoMap: textures.get("grass-ao"),
+        normalMap: textures.get("grass-normal"),
+        roughnessMap: textures.get("grass-rough"),
+      })
     );
+    const floorUvs = floor.geometry.getAttribute("uv") as THREE.BufferAttribute;
+    floor.geometry.setAttribute(
+      "uv2",
+      new THREE.Float32BufferAttribute(floorUvs.array, 2)
+    );
+    floor.receiveShadow = true;
     floor.rotation.x = -Math.PI * 0.5;
     floor.position.y = 0;
     this.scene.add(floor);
 
+    // House group
     const house = new THREE.Group();
     this.scene.add(house);
 
     // Walls
     const walls = new THREE.Mesh(
       new THREE.BoxGeometry(4, 2.5, 4),
-      new THREE.MeshStandardMaterial({ color: "#ac8e82" })
+      new THREE.MeshStandardMaterial({
+        map: textures.get("brick-color"),
+        aoMap: textures.get("brick-ao"),
+        normalMap: textures.get("brick-normal"),
+        roughnessMap: textures.get("brick-rough"),
+      })
     );
+    const wallUvs = walls.geometry.getAttribute("uv") as THREE.BufferAttribute;
+    walls.geometry.setAttribute(
+      "uv2",
+      new THREE.Float32BufferAttribute(wallUvs.array, 2)
+    );
+    walls.castShadow = true;
     walls.position.y = 1.25;
     house.add(walls);
 
@@ -99,8 +127,23 @@ export class GameState {
 
     // Door
     const door = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 2),
-      new THREE.MeshStandardMaterial({ color: "#aa7b7b" })
+      new THREE.PlaneGeometry(2.2, 2.2, 100, 100),
+      new THREE.MeshStandardMaterial({
+        map: textures.get("door-color"),
+        transparent: true,
+        alphaMap: textures.get("door-alpha"),
+        aoMap: textures.get("door-ao"),
+        displacementMap: textures.get("door-height"),
+        displacementScale: 0.1,
+        normalMap: textures.get("door-normal"),
+        metalnessMap: textures.get("door-metal"),
+        roughnessMap: textures.get("door-rough"),
+      })
+    );
+    const uvs = door.geometry.getAttribute("uv") as THREE.BufferAttribute;
+    door.geometry.setAttribute(
+      "uv2",
+      new THREE.Float32BufferAttribute(uvs.array, 2)
     );
     door.position.y = 1;
     door.position.z = 2.01;
@@ -127,27 +170,48 @@ export class GameState {
     bush4.position.set(-1, 0.05, 2.6);
 
     house.add(bush1, bush2, bush3, bush4);
+
+    [bush1, bush2, bush3, bush4].forEach((bush) => (bush.castShadow = true));
   }
 
   private addGraves() {
+    const { modelLoader } = this.gameLoader;
+
+    const graveModels: THREE.Object3D[] = [];
+    const graveBevel = modelLoader.get("grave-bevel");
+    if (graveBevel) {
+      graveModels.push(graveBevel);
+    }
+    const graveDeco = modelLoader.get("grave-deco");
+    if (graveDeco) {
+      graveModels.push(graveDeco);
+    }
+
     const graves = new THREE.Group();
     this.scene.add(graves);
 
-    const graveGeom = new THREE.BoxGeometry(0.6, 0.8, 0.2);
-    const graveMat = new THREE.MeshStandardMaterial({ color: "#b2b6b1" });
+    // const graveGeom = new THREE.BoxGeometry(0.6, 0.8, 0.2);
+    // const graveMat = new THREE.MeshStandardMaterial({ color: "#b2b6b1" });
 
     const graveCount = 50;
     for (let i = 0; i < graveCount; i++) {
+      // Work out random grave transform
       const angle = Math.random() * Math.PI * 2;
       const radius = 3.2 + Math.random() * 6;
 
       const x = Math.sin(angle) * radius;
       const z = Math.cos(angle) * radius;
 
-      const grave = new THREE.Mesh(graveGeom, graveMat);
-      grave.position.set(x, 0.3, z);
+      // Use random grave model
+      const rnd = Math.floor(Math.random() * graveModels.length);
+      const grave = graveModels[rnd].clone();
+
+      //const grave = new THREE.Mesh(graveGeom, graveMat);
+      grave.position.set(x, -0.03, z);
       grave.rotation.y = (Math.random() - 0.5) * 0.4;
       grave.rotation.z = (Math.random() - 0.5) * 0.2;
+
+      grave.castShadow = true;
 
       graves.add(grave);
     }
@@ -164,6 +228,7 @@ export class GameState {
     this.scene.add(ambientLight);
 
     const moonLight = new THREE.DirectionalLight("#b9d5ff", 0.12);
+    moonLight.castShadow = true;
     moonLight.position.set(4, 5, -2);
     this.gui
       .add(moonLight, "intensity")
@@ -178,8 +243,25 @@ export class GameState {
 
     // Door light
     const doorLight = new THREE.PointLight("#ff7d46", 1, 7);
+    doorLight.castShadow = true;
+    doorLight.shadow.mapSize.set(256, 256);
     doorLight.position.set(0, 2.2, 2.7);
     this.scene.add(doorLight);
+
+    // Ghost light
+    const ghost1 = new THREE.PointLight("#ff00ff", 2, 3);
+    ghost1.castShadow = true;
+    this.scene.add(ghost1);
+
+    const ghost2 = new THREE.PointLight("#00ffff", 2, 3);
+    ghost2.castShadow = true;
+    this.scene.add(ghost2);
+
+    const ghost3 = new THREE.PointLight("#ffff00", 2, 3);
+    ghost3.castShadow = true;
+    this.scene.add(ghost3);
+
+    this.ghostLights = [ghost1, ghost2, ghost3];
   }
 
   private addFog() {
@@ -189,6 +271,29 @@ export class GameState {
 
   private update = () => {
     requestAnimationFrame(this.update);
+
+    const elapsedTime = this.clock.getElapsedTime();
+
+    // Update ghosts
+    const ghost1Angle = elapsedTime * 0.5;
+    const ghost1 = this.ghostLights[0];
+    ghost1.position.x = Math.cos(ghost1Angle) * 4;
+    ghost1.position.z = Math.sin(ghost1Angle) * 4;
+    ghost1.position.y = Math.sin(elapsedTime * 3);
+
+    const ghost2Angle = -elapsedTime * 0.32;
+    const ghost2 = this.ghostLights[1];
+    ghost2.position.x = Math.cos(ghost2Angle) * 5;
+    ghost2.position.z = Math.sin(ghost2Angle) * 5;
+    ghost2.position.y = Math.sin(elapsedTime * 4) + Math.sin(elapsedTime * 2.5);
+
+    const ghost3Angle = -elapsedTime * 0.5;
+    const ghost3 = this.ghostLights[2];
+    ghost3.position.x =
+      Math.cos(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.32));
+    ghost3.position.z =
+      Math.sin(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.5));
+    ghost3.position.y = Math.sin(elapsedTime * 5) + Math.sin(elapsedTime * 2);
 
     this.renderer.render(this.scene, this.camera);
     this.controls.update();
