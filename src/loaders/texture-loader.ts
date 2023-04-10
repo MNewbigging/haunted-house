@@ -76,9 +76,9 @@ export class TextureLoader {
     // Bricks
     const brickColorUrl = new URL("/textures/bricks/color.jpg", import.meta.url)
       .href;
-    loader.load(brickColorUrl, (texture) =>
-      this.textures.set("brick-color", texture)
-    );
+    loader.load(brickColorUrl, (texture) => {
+      this.textures.set("brick-color", texture);
+    });
 
     const brickAoUrl = new URL(
       "/textures/bricks/ambientOcclusion.jpg",

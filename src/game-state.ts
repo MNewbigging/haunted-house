@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import GUI from "lil-gui";
+import { BoxGeometry } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import { GameLoader } from "./loaders/game-loader";
@@ -48,6 +49,7 @@ export class GameState {
     this.addLights();
 
     // Add scene objects
+    this.addBoundaryWalls();
     this.addObjects();
     this.addGraves();
     this.addFog();
@@ -172,6 +174,100 @@ export class GameState {
     house.add(bush1, bush2, bush3, bush4);
 
     [bush1, bush2, bush3, bush4].forEach((bush) => (bush.castShadow = true));
+  }
+
+  private addBoundaryWalls() {
+    const { textures } = this.gameLoader.textureLoader;
+    const { modelLoader } = this.gameLoader;
+
+    const wallMat = new THREE.MeshStandardMaterial({
+      map: textures.get("brick-color"),
+      aoMap: textures.get("brick-ao"),
+      normalMap: textures.get("brick-normal"),
+      roughnessMap: textures.get("brick-rough"),
+    });
+
+    const wallHeight = 0.6;
+    const wallThickness = 0.3;
+
+    const fence = modelLoader.get("iron-fence");
+    if (!fence) {
+      return;
+    }
+    fence.scale.x *= 2;
+
+    // Do walls in chunks for better texture res
+    for (let left = 0; left < 10; left++) {
+      const wallChunk = new THREE.Mesh(
+        new BoxGeometry(wallThickness, wallHeight, 2),
+        wallMat
+      );
+      wallChunk.position.y = wallHeight / 2;
+      wallChunk.position.x = -10;
+      wallChunk.position.z = -9 + left * 2;
+
+      const fenceSegment = fence.clone();
+      fenceSegment.position.copy(wallChunk.position);
+      fenceSegment.position.x = wallChunk.position.x - wallThickness * 1.5;
+      fenceSegment.position.y += 0.25;
+      fenceSegment.rotateY(Math.PI * 0.5);
+
+      this.scene.add(wallChunk, fenceSegment);
+    }
+
+    for (let right = 0; right < 10; right++) {
+      const wallChunk = new THREE.Mesh(
+        new BoxGeometry(0.3, wallHeight, 2),
+        wallMat
+      );
+      wallChunk.position.y = wallHeight / 2;
+      wallChunk.position.x = 10;
+      wallChunk.position.z = -9 + right * 2;
+
+      const fenceSegment = fence.clone();
+      fenceSegment.position.copy(wallChunk.position);
+      fenceSegment.position.x = wallChunk.position.x - wallThickness * 1.5;
+      fenceSegment.position.y += 0.25;
+      fenceSegment.rotateY(Math.PI * 0.5);
+
+      this.scene.add(wallChunk, fenceSegment);
+    }
+
+    for (let back = 0; back < 10; back++) {
+      const wallChunk = new THREE.Mesh(
+        new BoxGeometry(0.3, wallHeight, 2.3),
+        wallMat
+      );
+      wallChunk.position.y = wallHeight / 2;
+      wallChunk.position.x = -9 + back * 2;
+      wallChunk.position.z = -10;
+      wallChunk.rotateY(Math.PI * 0.5);
+
+      const fenceSegment = fence.clone();
+      fenceSegment.position.copy(wallChunk.position);
+      fenceSegment.position.z = wallChunk.position.z - wallThickness * 1.5;
+      fenceSegment.position.y += 0.25;
+
+      this.scene.add(wallChunk, fenceSegment);
+    }
+
+    for (let front = 0; front < 10; front++) {
+      const wallChunk = new THREE.Mesh(
+        new BoxGeometry(0.3, wallHeight, 2.3),
+        wallMat
+      );
+      wallChunk.position.y = wallHeight / 2;
+      wallChunk.position.x = -9 + front * 2;
+      wallChunk.position.z = 10;
+      wallChunk.rotateY(Math.PI * 0.5);
+
+      const fenceSegment = fence.clone();
+      fenceSegment.position.copy(wallChunk.position);
+      fenceSegment.position.z = wallChunk.position.z - wallThickness * 1.5;
+      fenceSegment.position.y += 0.25;
+
+      this.scene.add(wallChunk, fenceSegment);
+    }
   }
 
   private addGraves() {

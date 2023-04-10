@@ -117,5 +117,22 @@ export class ModelLoader {
 
       this.models.set("grave-round", gltf.scene);
     });
+
+    const ironFenceURl = new URL("/models/ironFence.glb", import.meta.url).href;
+    gltfLoader.load(ironFenceURl, (gltf) => {
+      // Traverse the gltf scene
+      gltf.scene.traverse((child) => {
+        const node = child as THREE.Mesh;
+        if (node.isMesh) {
+          // Kenney assets need their metalness reducing to render correctly
+          const mat = node.material as THREE.MeshStandardMaterial;
+          mat.metalness = 0;
+
+          node.castShadow = true;
+        }
+      });
+
+      this.models.set("iron-fence", gltf.scene);
+    });
   }
 }
