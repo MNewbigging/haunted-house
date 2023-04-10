@@ -146,5 +146,14 @@ export class TextureLoader {
       texture.wrapT = THREE.RepeatWrapping;
       this.textures.set("grass-rough", texture);
     });
+
+    // Particles
+    const rainParticleUrl = new URL(
+      "/textures/particles/trace_07.png",
+      import.meta.url
+    ).href;
+    loader.load(rainParticleUrl, (texture) =>
+      this.textures.set("rain", texture)
+    );
   }
 }

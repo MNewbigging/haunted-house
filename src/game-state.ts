@@ -11,6 +11,7 @@ export class GameState {
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
   private ghostLights: THREE.PointLight[] = [];
+  private rain?: THREE.Points;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -48,8 +49,10 @@ export class GameState {
     this.addObjects();
     this.addGraves();
     this.addFog();
+    this.addRain();
 
     // Start game
+    this.clock.start();
     this.update();
   }
 
@@ -347,6 +350,34 @@ export class GameState {
     this.scene.fog = fog;
   }
 
+  private addRain() {
+    const { textures } = this.gameLoader.textureLoader;
+
+    const rainMat = new THREE.PointsMaterial({
+      size: 0.1,
+      sizeAttenuation: true,
+      transparent: true,
+      alphaMap: textures.get("rain"),
+      color: "#9099a1",
+    });
+
+    const rainGeom = new THREE.BufferGeometry();
+    const count = 3000;
+    const positions = new Float32Array(count * 3);
+
+    for (let i = 0; i < count * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 20;
+    }
+
+    rainGeom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+    const rain = new THREE.Points(rainGeom, rainMat);
+
+    this.scene.add(rain);
+
+    this.rain = rain;
+  }
+
   private update = () => {
     requestAnimationFrame(this.update);
 
@@ -372,6 +403,14 @@ export class GameState {
     ghost3.position.z =
       Math.sin(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.5));
     ghost3.position.y = Math.sin(elapsedTime * 5) + Math.sin(elapsedTime * 2);
+
+    // Update rain
+    if (this.rain) {
+      this.rain.position.y -= 0.15;
+      if (this.rain.position.y < -6) {
+        this.rain.position.y = 0;
+      }
+    }
 
     this.renderer.render(this.scene, this.camera);
     this.controls.update();
