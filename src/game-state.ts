@@ -1,10 +1,8 @@
 import * as THREE from "three";
-import GUI from "lil-gui";
 import { BoxGeometry } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import { GameLoader } from "./loaders/game-loader";
-import { addGui } from "./utils/utils";
 
 export class GameState {
   private clock = new THREE.Clock();
@@ -12,7 +10,6 @@ export class GameState {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
-  private gui = new GUI();
   private ghostLights: THREE.PointLight[] = [];
 
   constructor(
@@ -39,8 +36,6 @@ export class GameState {
     this.renderer.setClearColor("#262837");
     window.addEventListener("resize", this.onCanvasResize);
     this.onCanvasResize();
-
-    //this.scene.background = new THREE.Color("#1680AF");
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
@@ -316,27 +311,12 @@ export class GameState {
   }
 
   private addLights() {
-    const ambientLight = new THREE.AmbientLight("#b9d5ff", 0.12);
-    this.gui
-      .add(ambientLight, "intensity")
-      .min(0)
-      .max(1)
-      .step(0.001)
-      .name("ambient intensity");
+    const ambientLight = new THREE.AmbientLight("#b9d5ff", 0.02);
     this.scene.add(ambientLight);
 
-    const moonLight = new THREE.DirectionalLight("#b9d5ff", 0.12);
+    const moonLight = new THREE.DirectionalLight("#b9d5ff", 0.02);
     moonLight.castShadow = true;
     moonLight.position.set(4, 5, -2);
-    this.gui
-      .add(moonLight, "intensity")
-      .min(0)
-      .max(1)
-      .step(0.001)
-      .name("directional intensity");
-    this.gui.add(moonLight.position, "x").min(-5).max(5).step(0.001);
-    this.gui.add(moonLight.position, "y").min(-5).max(5).step(0.001);
-    this.gui.add(moonLight.position, "z").min(-5).max(5).step(0.001);
     this.scene.add(moonLight);
 
     // Door light
